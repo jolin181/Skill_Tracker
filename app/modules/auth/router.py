@@ -16,7 +16,4 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
-@router.get("/", summary="Auth module health check")
-async def auth_root() -> dict:
-    """Placeholder endpoint — confirms the auth module is mounted."""
-    return {"module": "auth", "status": "ok"}
+
