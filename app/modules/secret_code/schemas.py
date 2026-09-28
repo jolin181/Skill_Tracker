@@ -40,10 +40,4 @@ class SecretCodeRevealResponse(BaseModel):
     Must NEVER be returned from a student-facing route.
     """
 
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    allocation_id: uuid.UUID
-    plaintext_code: str  # SECURITY: plaintext only here; admin reveal + audited path
-    is_used: bool
-    expires_at: datetime
+   
