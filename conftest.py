@@ -20,4 +20,5 @@ _TEST_FERNET_KEY = "fx86xFbhnQqYYskjxu1BYBp6nUCcWoELZkG0h7WlaTg="
 
 os.environ.setdefault("CODE_ENCRYPTION_KEY", _TEST_FERNET_KEY)
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test_db")
-os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only")
+# JWT signing key: at least 32 characters (app/core/config.py refuses shorter keys).
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-0123456789-abcdefghij")

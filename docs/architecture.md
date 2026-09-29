@@ -60,4 +60,5 @@
 - JWT access tokens (short-lived) + refresh tokens (long-lived, stored in DB).
 - Secret codes encrypted at rest with Fernet symmetric encryption.
 - Every secret code reveal is written to `audit_log` via `core/audit.py`.
-- Role-based access: `student` and `admin`. Domain incharge = admin scoped to `track_id`.
+- Role-based access: `admin`, `student`, and four domain-owner roles (`fullstack_domain_owner`, `cyber_domain_owner`, `cloud_devops_domain_owner`, `ml_domain_owner`), read from `roles` / `user_roles` on every request. Each domain-owner role is limited to one track (`roles.track_id`).
+- Access tokens are 15-minute JWTs; refresh tokens rotate on every use and live in an httpOnly cookie. Passwords are hashed with Argon2id.

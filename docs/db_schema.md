@@ -7,39 +7,61 @@
 
 ## User & Auth Tables
 
+A user's roles are **not** a column on `users`: they are the `user_roles` rows joined to `roles`
+(`users.id → user_roles.user_id → user_roles.role_id → roles.name`).
+Columns marked *(auth)* were added by migration `c7a91e2f4b30`.
+
 ### users
 | Column | Type |
 |---|---|
 | id | INTEGER (PK) |
-| email | VARCHAR |
-| password_hash | VARCHAR |
-| is_active | BOOLEAN |
-| failed_login_count | INTEGER |
-| created_at | TIMESTAMP |
-| updated_at | TIMESTAMP |
+| email | VARCHAR (unique, stored lowercase) |
+| username | VARCHAR(50) (unique, stored lowercase) *(auth)* |
+| full_name | VARCHAR(100) *(auth)* |
+| phone | VARCHAR(15) *(auth)* |
+| password_hash | VARCHAR (Argon2id) |
+| is_active | BOOLEAN NOT NULL DEFAULT true |
+| failed_login_count | INTEGER NOT NULL DEFAULT 0 |
+| created_at | TIMESTAMPTZ NOT NULL |
+| updated_at | TIMESTAMPTZ NOT NULL |
+| token_version | INTEGER NOT NULL DEFAULT 0 — bumping it revokes every access token *(auth)* |
+| must_change_password | BOOLEAN NOT NULL DEFAULT false *(auth)* |
+| locked_until | TIMESTAMPTZ — temporary lockout after wrong passwords *(auth)* |
+| last_login_at | TIMESTAMPTZ *(auth)* |
 
 ### roles
+Six rows: `admin`, `student`, `fullstack_domain_owner`, `cyber_domain_owner`, `cloud_devops_domain_owner`, `ml_domain_owner`.
+
 | Column | Type |
 |---|---|
 | id | INTEGER (PK) |
-| name | VARCHAR |
+| name | VARCHAR (unique) |
+| track_id | INTEGER (FK → tracks, ON DELETE SET NULL, unique) — the one track a domain-owner role manages; only allowed on `*_domain_owner` roles *(auth)* |
 
 ### user_roles
 | Column | Type |
 |---|---|
 | id | INTEGER (PK) |
 | user_id | INTEGER (FK → users) |
-| role_id | INTEGER (FK → roles) |
+| role_id | INTEGER (FK → roles, indexed) |
+
+Unique (user_id, role_id).
 
 ### refresh_tokens
+One row per refresh token; only its SHA-256 hash is stored. A token is revoked when `revoked_at` is set.
+
 | Column | Type |
 |---|---|
 | id | INTEGER (PK) |
-| user_id | INTEGER (FK → users) |
-| token_hash | VARCHAR |
-| expires_at | TIMESTAMP |
-| revoked | BOOLEAN |
-| created_at | TIMESTAMP |
+| user_id | INTEGER (FK → users) NOT NULL |
+| token_hash | VARCHAR NOT NULL (unique) |
+| family_id | VARCHAR(32) NOT NULL — one login session *(auth)* |
+| expires_at | TIMESTAMPTZ NOT NULL |
+| created_at | TIMESTAMPTZ NOT NULL |
+| revoked_at | TIMESTAMPTZ *(auth)* |
+| revoked_reason | VARCHAR(30) *(auth)* |
+| user_agent | VARCHAR(255) *(auth)* |
+| ip_address | VARCHAR(45) *(auth)* |
 
 ---
 
@@ -50,6 +72,7 @@
 |---|---|
 | id | INTEGER (PK) |
 | name | VARCHAR |
+| code | VARCHAR(20) (unique), e.g. CSE *(auth)* |
 
 ### academic_years
 | Column | Type |
@@ -61,17 +84,25 @@
 | Column | Type |
 |---|---|
 | id | INTEGER (PK) |
-| user_id | INTEGER (FK → users) |
+| user_id | INTEGER (FK → users, unique) |
 | department_id | INTEGER (FK → departments) |
 | academic_year_id | INTEGER (FK → academic_years) |
-| roll_number | VARCHAR |
+| roll_number | VARCHAR (unique) |
+| reg_num | VARCHAR(20) (unique) — university register number *(auth)* |
+| curr_sem | SMALLINT, 1–10 — the year of study is derived as ⌈curr_sem / 2⌉, not stored *(auth)* |
+| foundation_year_completed | BOOLEAN NOT NULL DEFAULT false *(auth)* |
 
 ### domain_incharge
+A domain owner's assignment to the track of their role (`roles.track_id`), with their employee id.
+
 | Column | Type |
 |---|---|
 | id | INTEGER (PK) |
 | user_id | INTEGER (FK → users) |
 | track_id | INTEGER (FK → tracks) |
+| emp_id | VARCHAR(30) *(auth)* |
+
+Unique (user_id, track_id).
 
 ---
 
@@ -406,6 +437,6 @@
 | action | VARCHAR |
 | actor_user_id | INTEGER (FK → users) |
 | target_user_id | INTEGER (FK → users) |
-| details | JSONB |
+| details | JSON |
 | ip_address | VARCHAR |
-| created_at | TIMESTAMP |
+| created_at | TIMESTAMPTZ |

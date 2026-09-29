@@ -4,8 +4,9 @@ app/core/constants.py
 Application-wide constants and enumerations.
 
 Rules:
-- Roles are "student" and "admin" (strings, matching the roles table name column).
-- A domain_incharge is an admin with a track_id scope — NOT a separate role.
+- Roles are the six names in the roles table (see app.modules.auth.models.RoleName): "admin",
+  "student" and four domain-owner roles. Each domain-owner role is limited to one track
+  (roles.track_id); domain_incharge records a domain owner's assignment to that track.
 - MAX_ATTEMPTS = 3: a student may attempt a level at most 3 times before being
   locked out (enrollment.is_blocked = true).
 - Difficulty levels mirror the VARCHAR values stored in the question table.
@@ -18,7 +19,10 @@ TODO: Move status enums to individual module constants if they diverge.
 # ── Roles ─────────────────────────────────────────────────────────────────────
 ROLE_STUDENT = "student"
 ROLE_ADMIN = "admin"
-# Note: domain_incharge is admin + track_id scope, not a separate role.
+ROLE_FULLSTACK_DOMAIN_OWNER = "fullstack_domain_owner"
+ROLE_CYBER_DOMAIN_OWNER = "cyber_domain_owner"
+ROLE_CLOUD_DEVOPS_DOMAIN_OWNER = "cloud_devops_domain_owner"
+ROLE_ML_DOMAIN_OWNER = "ml_domain_owner"
 
 # ── Attempt Limits ────────────────────────────────────────────────────────────
 MAX_ATTEMPTS = 3  # Maximum attempts per level before enrollment.is_blocked = true

@@ -11,12 +11,13 @@ alembic>=1.13.0
 
 
 # ── Auth / Security ───────────────────────────────────────────────────────────
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
+PyJWT>=2.10.0            # access tokens
+pwdlib[argon2]>=0.2.1    # Argon2id password hashing
+pydantic[email]>=2.9.0   # EmailStr validation
 cryptography>=42.0.0   # Fernet for secret_code encryption
 
 # ── Config ────────────────────────────────────────────────────────────────────
-pydantic-settings>=2.0.0
+pydantic-settings>=2.7.0
 python-dotenv>=1.0.0
 
 # ── HTTP / LLM Client ─────────────────────────────────────────────────────────

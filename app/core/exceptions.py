@@ -3,16 +3,23 @@ app/core/exceptions.py
 -----------------------
 Custom exception classes and global FastAPI exception handlers.
 
-All domain-specific errors should subclass one of the base classes
-defined here so that the global handlers produce consistent JSON responses.
+Two families live here:
+- SkillLevelingException and its subclasses (NotFoundError, ConflictError, ...), used by the
+  domain modules. Responses: {"detail": ..., "status_code": ...}.
+- AppError and its subclasses (BadRequest, Unauthorized, ...), used by auth and users. Each carries
+  a machine-readable `code`; responses: {"detail": ..., "code": ...}. The frontend should branch
+  on `code` (e.g. TOKEN_EXPIRED, PASSWORD_CHANGE_REQUIRED), never on the message text.
 
-TODO: Register handlers in main.py using app.add_exception_handler().
-TODO: Add error_code field to responses for client-side error discrimination.
+register_exception_handlers(app) installs the handlers for both (called from main.py).
+
 TODO: Add Sentry / observability integration in the handler callbacks.
 """
 
-from fastapi import HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 # ── Base Domain Exceptions ────────────────────────────────────────────────────
@@ -54,6 +61,49 @@ class ValidationError(SkillLevelingException):
         super().__init__(detail, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
+# ── Coded errors (auth / users) ───────────────────────────────────────────────
+
+class AppError(Exception):
+    status_code: int = 400
+
+    def __init__(self, code: str, message: str, *, headers: dict[str, str] | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.headers = headers
+
+
+class BadRequest(AppError):
+    status_code = 400
+
+
+class Unauthorized(AppError):
+    """401: not logged in, or the token is missing, expired or invalid."""
+
+    status_code = 401
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(code, message, headers={"WWW-Authenticate": "Bearer"})
+
+
+class Forbidden(AppError):
+    """403: logged in, but not allowed to do this."""
+
+    status_code = 403
+
+
+class NotFound(AppError):
+    status_code = 404
+
+
+class Conflict(AppError):
+    status_code = 409
+
+
+class TooManyRequests(AppError):
+    status_code = 429
+
+
 # ── Exception Handlers ────────────────────────────────────────────────────────
 
 async def skill_leveling_exception_handler(
@@ -70,5 +120,28 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     """Wrap FastAPI's HTTPException in the standard error envelope."""
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail, "status_code": exc.status_code},
+        content={"detail": exc.detail, "status_code": exc.status_code, "code": f"HTTP_{exc.status_code}"},
+        headers=getattr(exc, "headers", None),
     )
+
+
+async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.message, "code": exc.code},
+        headers=exc.headers,
+    )
+
+
+async def request_validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={"detail": jsonable_encoder(exc.errors()), "code": "VALIDATION_ERROR"},
+    )
+
+
+def register_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(SkillLevelingException, skill_leveling_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(RequestValidationError, request_validation_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]

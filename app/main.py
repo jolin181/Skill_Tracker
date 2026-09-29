@@ -9,18 +9,23 @@ Responsibilities:
 - Exposes GET /health as a simple liveness probe.
 - Applies global middleware (CORS, exception handlers).
 
-TODO: Add startup/shutdown lifespan events (e.g. DB pool warm-up).
 TODO: Add rate-limiting middleware.
 TODO: Add structured logging middleware.
 """
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.database import engine
+from app.core.exceptions import register_exception_handlers
 
 # ── Module Routers ──────────────────────────────────────────────────────────
 from app.modules.auth.router import router as auth_router
+from app.modules.users.router import audit_router, departments_router, roles_router
 from app.modules.users.router import router as users_router
 from app.modules.domains.router import router as domains_router
 from app.modules.exams.router import router as exams_router
@@ -38,13 +43,22 @@ from app.modules.notifications.router import router as notifications_router
 
 # ── App Factory ─────────────────────────────────────────────────────────────
 
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    yield
+    await engine.dispose()  # close pooled connections cleanly on shutdown
+
+
 app = FastAPI(
     title="Skill Leveling Platform",
-    description="API for student-driven skill assessment and leveling.",
+    description="API for student-driven skill assessment and leveling. "
+    "Use **Authorize** (top right) to log in with a username or email and password.",
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
+register_exception_handlers(app)
 
 # ── CORS Middleware ──────────────────────────────────────────────────────────
 app.add_middleware(
@@ -64,10 +78,11 @@ async def health_check() -> dict:
 
 
 # ── Mount Module Routers ─────────────────────────────────────────────────────
-API_PREFIX = "/api/v1"
+API_PREFIX = settings.api_v1_prefix
 
-app.include_router(auth_router,          prefix=f"{API_PREFIX}/auth",          tags=["Auth"])
-app.include_router(users_router,         prefix=f"{API_PREFIX}/users",         tags=["Users"])
+# auth and users routers carry their own prefixes (/auth, /users, /roles, /departments, /audit-logs).
+for _router in (auth_router, users_router, roles_router, departments_router, audit_router):
+    app.include_router(_router, prefix=API_PREFIX)
 app.include_router(domains_router,       prefix=f"{API_PREFIX}/domains",       tags=["Domains"])
 app.include_router(exams_router,         prefix=f"{API_PREFIX}/exams",         tags=["Exams"])
 app.include_router(slots_admin_router,   prefix=f"{API_PREFIX}/slots/admin",   tags=["Slots - Admin"])

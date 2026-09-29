@@ -10,9 +10,10 @@ College students level up their skills by booking exams themselves.
 - A student has a maximum of 3 attempts per level (attempt.attempt_no).
   After 3 failed attempts the student is locked out of that track
   (enrollment.is_blocked = true).
-- Roles come from the roles/user_roles tables: "student" and "admin" at
-  minimum. A domain_incharge is an admin scoped to one track (track_id on
-  domain_incharge), not a separate role.
+- Roles come from the roles/user_roles tables: "admin", "student",
+  "fullstack_domain_owner", "cyber_domain_owner", "cloud_devops_domain_owner"
+  and "ml_domain_owner". Each domain-owner role is limited to one track
+  (roles.track_id); domain_incharge records the owner's assignment to it.
 - Admin creates an assessment (exam definition) for a level, with duration
   and status.
 - Admin creates slots for an assessment (date, start_time, end_time,
