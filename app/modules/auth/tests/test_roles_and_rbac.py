@@ -119,16 +119,19 @@ async def test_roles_endpoint_lists_all_roles(client, make_user, login):
 # ------------------------------------------------------------------ dict dependencies (compatibility)
 
 
-async def test_legacy_dependencies_still_return_the_same_dict(client, make_user, login):
+async def test_legacy_dependencies_return_the_expected_dict(client, make_user, login):
+    """get_current_user / require_admin give the users.id; require_student gives the
+    students.id, because student tables (slot_bookings, attempts, ...) point at students.id."""
     admin = await make_user(RoleName.ADMIN)
     student = await make_user(RoleName.STUDENT)
     admin_token = await login(admin.username)
     student_token = await login(student.username)
+    assert student.student.id != student.id  # the two ids differ, so the test tells them apart
 
     body = (await client.get("/_test/legacy/admin", headers=bearer(admin_token))).json()
     assert body == {"id": admin.id, "roles": ["admin"], "has_user": True}
     assert (await client.get("/_test/legacy/student", headers=bearer(student_token))).json() == {
-        "id": student.id,
+        "id": student.student.id,
         "roles": ["student"],
     }
     assert (await client.get("/_test/legacy/me", headers=bearer(student_token))).json()["id"] == student.id
