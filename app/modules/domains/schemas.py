@@ -173,3 +173,48 @@ class StudentListResponse(BaseModel):
     page: int = Field(..., ge=1)
     page_size: int = Field(..., ge=1)
     filters_applied: dict = Field(default_factory=dict)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SYLLABUS SCHEMAS
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class SyllabusUploadResponse(BaseModel):
+    """Response after successful syllabus upload."""
+    success: bool = Field(..., description="Upload success flag")
+    message: str = Field(..., description="Success message")
+    syllabus_id: int = Field(..., description="ID of uploaded syllabus")
+    track_id: int = Field(..., description="Track ID")
+    file_name: str = Field(..., description="Original filename")
+    uploaded_at: datetime = Field(..., description="Upload timestamp")
+    page_count: Optional[int] = Field(None, description="Number of pages extracted")
+    extracted_text_length: int = Field(..., description="Length of extracted text")
+    text_preview: str = Field(..., description="First 200 chars of text")
+
+
+class SyllabusResponse(BaseModel):
+    """Full syllabus data including extracted text."""
+    syllabus_id: int
+    track_id: int
+    track_name: str
+    file_name: str
+    uploaded_by: int  # User ID
+    uploaded_at: datetime
+    page_count: Optional[int]
+    file_size_bytes: int
+    raw_text: str = Field(..., description="Full extracted text from PDF")
+    status: str = Field(..., description="active, replaced, or archived")
+    notes: Optional[str] = None
+
+
+class SyllabusMetadataResponse(BaseModel):
+    """Lightweight syllabus metadata (no full text)."""
+    has_syllabus: bool = Field(..., description="Whether track has a syllabus")
+    track_id: int
+    track_name: Optional[str] = None
+    syllabus_id: Optional[int] = None
+    file_name: Optional[str] = None
+    uploaded_at: Optional[datetime] = None
+    page_count: Optional[int] = None
+    text_length: int = Field(default=0, description="Length of extracted text")
