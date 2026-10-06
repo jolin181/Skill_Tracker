@@ -28,6 +28,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.users.router import audit_router, departments_router, roles_router
 from app.modules.users.router import router as users_router
 from app.modules.domains.router import router as domains_router
+from app.modules.domains.analytics_router import router as domains_analytics_router
 from app.modules.exams.router import router as exams_router
 from app.modules.slots.router_admin import router as slots_admin_router
 from app.modules.slots.router_student import router as slots_student_router
@@ -84,17 +85,18 @@ API_PREFIX = settings.api_v1_prefix
 # auth and users routers carry their own prefixes (/auth, /users, /roles, /departments, /audit-logs).
 for _router in (auth_router, users_router, roles_router, departments_router, audit_router):
     app.include_router(_router, prefix=API_PREFIX)
-app.include_router(domains_router,       prefix=f"{API_PREFIX}/domains",       tags=["Domains"])
-app.include_router(exams_router,         prefix=f"{API_PREFIX}/exams",         tags=["Exams"])
-app.include_router(slots_admin_router,   prefix=f"{API_PREFIX}/slots/admin",   tags=["Slots - Admin"])
-app.include_router(slots_student_router, prefix=f"{API_PREFIX}/slots/student", tags=["Slots - Student"])
-app.include_router(halls_router,         prefix=f"{API_PREFIX}/halls",         tags=["Halls"])
-app.include_router(allocation_router,    prefix=f"{API_PREFIX}/allocation",    tags=["Allocation"])
-app.include_router(secret_code_router,   prefix=f"{API_PREFIX}/secret-code",   tags=["Secret Code"])
-app.include_router(hall_sheets_router,   prefix=f"{API_PREFIX}/hall-sheets",   tags=["Hall Sheets"])
-app.include_router(progress_router,      prefix=f"{API_PREFIX}/progress",      tags=["Progress"])
-app.include_router(attempts_router,      prefix=f"{API_PREFIX}/attempts",      tags=["Attempts"])
-app.include_router(ai_engine_router,     prefix=f"{API_PREFIX}/ai-engine",     tags=["AI Engine"])
-app.include_router(analytics_router,     prefix=f"{API_PREFIX}/analytics",     tags=["Analytics"])
-app.include_router(notifications_router, prefix=f"{API_PREFIX}/notifications",  tags=["Notifications"])
-app.include_router(proctoring_router,    prefix=f"{API_PREFIX}/proctoring",    tags=["Proctoring"])
+app.include_router(domains_router,            prefix=f"{API_PREFIX}/domains",       tags=["Domains"])
+app.include_router(domains_analytics_router,  prefix=f"{API_PREFIX}/domains",       tags=["Domain Analytics"])
+app.include_router(exams_router,              prefix=f"{API_PREFIX}/exams",         tags=["Exams"])
+app.include_router(slots_admin_router,        prefix=f"{API_PREFIX}/slots/admin",   tags=["Slots - Admin"])
+app.include_router(slots_student_router,      prefix=f"{API_PREFIX}/slots/student", tags=["Slots - Student"])
+app.include_router(halls_router,              prefix=f"{API_PREFIX}/halls",         tags=["Halls"])
+app.include_router(allocation_router,         prefix=f"{API_PREFIX}/allocation",    tags=["Allocation"])
+app.include_router(secret_code_router,        prefix=f"{API_PREFIX}/secret-code",   tags=["Secret Code"])
+app.include_router(hall_sheets_router,        prefix=f"{API_PREFIX}/hall-sheets",   tags=["Hall Sheets"])
+app.include_router(progress_router,           prefix=f"{API_PREFIX}/progress",      tags=["Progress"])
+app.include_router(attempts_router,           prefix=f"{API_PREFIX}/attempts",      tags=["Attempts"])
+app.include_router(ai_engine_router,          prefix=f"{API_PREFIX}/ai-engine",     tags=["AI Engine"])
+app.include_router(analytics_router,          prefix=f"{API_PREFIX}/analytics",     tags=["Analytics"])
+app.include_router(notifications_router,      prefix=f"{API_PREFIX}/notifications", tags=["Notifications"])
+app.include_router(proctoring_router,         prefix=f"{API_PREFIX}/proctoring",    tags=["Proctoring"])
